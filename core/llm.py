@@ -2,61 +2,54 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Load local .env (harmless on Render)
 load_dotenv()
 
-# ✅ Works BOTH locally + Render
-api_key = (
-    os.getenv("GOOGLE_API_KEY")     # Render / Production
-    or os.getenv("GEMINI_API_KEY")  # Local / Development
-)
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
-    raise ValueError("Missing API Key (GOOGLE_API_KEY or GEMINI_API_KEY)")
-
-genai.configure(api_key=api_key)
+    print("⚠ No API Key found → Running in Cognitive Simulation Mode")
+else:
+    genai.configure(api_key=api_key)
 
 
 class LLMBrain:
     def __init__(self):
-        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        try:
+            self.model = genai.GenerativeModel("gemini-2.5-flash")
+            self.available = True
+        except:
+            self.available = False
 
-    # ✅ Executive reasoning
+    def safe_generate(self, prompt):
+
+        if not self.available:
+            return "LLM unavailable – Running deterministic cognitive reasoning."
+
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            print("LLM Failure:", str(e))
+            return "LLM temporarily unavailable – Cognitive engine fallback activated."
+
     def analyze(self, patient, scores, decision):
 
         prompt = f"""
-You are the Executive Cognitive AI of a Swarm Intelligence System.
+        You are the Executive Cognitive AI of a Swarm Intelligence System.
 
-Patient Signals:
-{patient}
+        Patient Signals:
+        {patient}
 
-Cognitive Scores:
-{scores}
+        Cognitive Scores:
+        {scores}
 
-Executive Decision:
-{decision}
+        Executive Decision:
+        {decision}
 
-Provide professional clinical reasoning explaining:
+        Provide professional clinical reasoning.
+        """
 
-• Emotional interpretation
-• Dominant psychological pressures
-• Contradictions / patterns
-• High-level executive insight
-"""
+        return self.safe_generate(prompt)
 
-        try:
-            response = self.model.generate_content(prompt)
-            return response.text
-
-        except Exception as e:
-            return f"LLM temporarily unavailable: {str(e)}"
-
-    # ✅ Agent-level reasoning
     def analyze_text(self, prompt):
-
-        try:
-            response = self.model.generate_content(prompt)
-            return response.text
-
-        except Exception as e:
-            return f"Agent reasoning unavailable: {str(e)}"
+        return self.safe_generate(prompt)
