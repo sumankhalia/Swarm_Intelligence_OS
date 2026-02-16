@@ -1,25 +1,14 @@
 import os
-from dotenv import load_dotenv
-import google.generativeai as genai
+from openai import OpenAI
 
-load_dotenv()
 
-# ✅ Proper key resolution (Production First)
-api_key = os.getenv("GOOGLE_API_KEY")
-
-if not api_key:
-    api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("Missing API Key (GOOGLE_API_KEY or GEMINI_API_KEY)")
-
-genai.configure(api_key=api_key)
+# ✅ Production-safe client
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
 
 class LLMBrain:
-
-    def __init__(self):
-        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
     def analyze(self, patient, scores, decision):
 
@@ -35,21 +24,37 @@ Cognitive Scores:
 Executive Decision:
 {decision}
 
-Provide professional clinical reasoning.
+Provide professional clinical reasoning explaining the psychological interpretation,
+dominant pressures, contradictions, and executive assessment.
 """
 
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            response = client.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+            )
+
+            return response.choices[0].message.content
+
         except Exception as e:
             print("LLM Failure:", str(e))
-            return "LLM unavailable – Cognitive fallback activated."
+            return "Cognitive reasoning temporarily unavailable."
+
 
     def analyze_text(self, prompt):
 
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            response = client.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+            )
+
+            return response.choices[0].message.content
+
         except Exception as e:
             print("LLM Failure:", str(e))
-            return "LLM unavailable – Cognitive fallback activated."
+            return "Agent reasoning temporarily unavailable."
