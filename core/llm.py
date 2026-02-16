@@ -4,52 +4,52 @@ import google.generativeai as genai
 
 load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+# ✅ Proper key resolution (Production First)
+api_key = os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
-    print("⚠ No API Key found → Running in Cognitive Simulation Mode")
-else:
-    genai.configure(api_key=api_key)
+    api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    raise ValueError("Missing API Key (GOOGLE_API_KEY or GEMINI_API_KEY)")
+
+genai.configure(api_key=api_key)
 
 
 class LLMBrain:
+
     def __init__(self):
-        try:
-            self.model = genai.GenerativeModel("gemini-2.5-flash")
-            self.available = True
-        except:
-            self.available = False
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
-    def safe_generate(self, prompt):
+    def analyze(self, patient, scores, decision):
 
-        if not self.available:
-            return "LLM unavailable – Running deterministic cognitive reasoning."
+        prompt = f"""
+You are the Executive Cognitive AI of a Swarm Intelligence System.
+
+Patient Signals:
+{patient}
+
+Cognitive Scores:
+{scores}
+
+Executive Decision:
+{decision}
+
+Provide professional clinical reasoning.
+"""
 
         try:
             response = self.model.generate_content(prompt)
             return response.text
         except Exception as e:
             print("LLM Failure:", str(e))
-            return "LLM temporarily unavailable – Cognitive engine fallback activated."
-
-    def analyze(self, patient, scores, decision):
-
-        prompt = f"""
-        You are the Executive Cognitive AI of a Swarm Intelligence System.
-
-        Patient Signals:
-        {patient}
-
-        Cognitive Scores:
-        {scores}
-
-        Executive Decision:
-        {decision}
-
-        Provide professional clinical reasoning.
-        """
-
-        return self.safe_generate(prompt)
+            return "LLM unavailable – Cognitive fallback activated."
 
     def analyze_text(self, prompt):
-        return self.safe_generate(prompt)
+
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            print("LLM Failure:", str(e))
+            return "LLM unavailable – Cognitive fallback activated."
